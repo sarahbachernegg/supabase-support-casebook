@@ -1,6 +1,6 @@
 # Supabase Support Engineer Casebook
 
-I created this casebook as proof-of-work for the open Supabase Support Engineer role (EMEA).
+I’m building this while learning Supabase more deeply. My goal is not to present myself as an expert, but to show how I investigate issues, write clearly, and turn debugging into useful customer-facing explanations because I am strong in technical problems but even stronger in good customer support and communication. 
 
 The goal is to show how I investigate developer support issues: reproducing problems, isolating root causes, explaining fixes clearly, and identifying when something should be escalated to engineering or improved in documentation.
 
