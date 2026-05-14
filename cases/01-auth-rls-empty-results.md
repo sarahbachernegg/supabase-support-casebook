@@ -140,15 +140,20 @@ to authenticated
 with check (user_id = auth.uid());
 ```
 
-## Customer-facing response draft
+## Reply I would send to the customer
 
-Thanks for the details. Since authentication works but the query returns an empty array, I would first check the Row Level Security policy on the `projects` table.
+Thanks for sharing the details. Since the query returns `data = []` with `error = null`, I would first check the RLS setup on the `projects` table.
 
-In Supabase, logging in successfully does not automatically mean the user can read rows from a table. If RLS is enabled, Postgres only returns rows that match an active policy.
+This usually means the request itself is not failing. Instead, Postgres is returning zero rows that are visible to the current user. In Supabase, signing in successfully confirms who the user is, but RLS policies still decide which rows that user is allowed to read.
 
-A good first check is whether the value in `projects.user_id` matches the logged-in user's `auth.uid()`.
+Please check these four things first:
 
-For example, if each project belongs to one user, this policy would allow authenticated users to read only their own projects:
+1. Is RLS enabled on `projects`?
+2. Is there a `select` policy for the `authenticated` role?
+3. Does `projects.user_id` store the same UUID as the logged-in user's `auth.uid()`?
+4. Is the client request using the authenticated user's session?
+
+If each project belongs to one user, please test this policy:
 
 ```sql
 create policy "Users can read their own projects"
@@ -158,9 +163,19 @@ to authenticated
 using (user_id = auth.uid());
 ```
 
-If this fixes the empty result, the issue was likely authorization/RLS rather than the client query itself.
+Then try run the same client query again:
 
-If it still returns an empty array, I would next check whether the client request includes the authenticated session and whether the stored `user_id` values actually match the user's auth ID.
+```ts
+const { data, error } = await supabase
+  .from('projects')
+  .select('*')
+```
+
+If the row appears after adding the policy, the issue was not the `select()` call itself. The query was working, but RLS was filtering out the rows because no policy allowed this user to read them.
+
+If it still returns an empty array, check whether the client has an active session and if the stored `user_id` value exactly matches the authenticated user's ID.
+
+Let us know if you are facing any further issues, I will be happy to assist. 
 
 ## Escalation note
 
