@@ -55,10 +55,10 @@ Each case includes:
 - customer problem
 - impact
 - investigation steps
-- reproduction notes
+- my reproduction notes
 - likely root cause
 - fix or workaround
-- reply I would send
+- support reply I would send to the user
 - escalation note
 - documentation or product improvement idea
-- what I learned
+- what I learned while reproducing and debugging the issue
