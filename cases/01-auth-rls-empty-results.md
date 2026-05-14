@@ -6,9 +6,7 @@
 
 I picked this because it seems like a common Supabase support issue: a user is logged in, the table has data, but the client query returns an empty array.
 
-At first glance this can look like an auth or client-side bug. But in Supabase, authentication and authorization are separate. A user can be logged in successfully and still not be allowed to see any rows because of Row Level Security.
-
-I wanted to write this up because it is exactly the kind of issue where clear support communication matters.
+First, this looked like an auth or client-side bug to me. But I found that in Supabase, authentication and authorization are separate. A user can be logged in successfully and still not be allowed to see any rows because of Row Level Security.
 
 ## Customer problem
 
@@ -35,7 +33,7 @@ The user's dashboard appears empty.
 
 From the user's perspective, the app looks broken even though authentication works. This can be confusing because there is no obvious error message.
 
-## What I would check first
+## What I checked first
 
 1. Is Row Level Security enabled on the table?
 2. Is there a `select` policy for the `authenticated` role?
@@ -204,6 +202,8 @@ const { data, error } = await supabase
 If the row appears after adding the policy, the issue was not the `select()` call itself. The query was working, but RLS was filtering out the rows because no policy allowed this user to read them.
 
 If it still returns an empty array, I would next check whether the client has an active session and whether the stored `user_id` value exactly matches the authenticated user's ID.
+
+If this still does not return the expected row, please share the table schema, active RLS policies, and the client code used for the query so we can narrow it down further.
 
 ## Escalation note
 
