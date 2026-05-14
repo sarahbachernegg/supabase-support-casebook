@@ -1,6 +1,6 @@
 # Case 2: Realtime subscription connects but receives no events
 
-> Status: Draft. I wrote this based on a common Supabase Realtime support scenario and will update it after reproducing the issue in a local or hosted Supabase project.
+> Status: Reproduced a working Realtime baseline in a hosted Supabase project using a `postgres_changes` subscription, insert test, and terminal output.
 
 ## Why I picked this case
 
@@ -225,18 +225,18 @@ using (true);
 
 For a real app, I would avoid `using (true)` unless the table is meant to be readable by all authenticated users. For user-owned rows, I would use an ownership check instead.
 
-## Customer-facing response draft
+## Reply I would send
 
-Thanks for the details. Since your subscription reaches `SUBSCRIBED`, I would separate this into two questions:
+Thanks for sharing the code. Since the subscription reaches `SUBSCRIBED`, I would separate this into two parts:
 
-1. Is the Realtime connection active?
-2. Are database changes matching the subscription and visible to this user?
+1. Is the Realtime channel connected?
+2. Is a matching database change being delivered to this client?
 
-The first thing I would try is simplifying the subscription filter:
+`SUBSCRIBED` tells us the client joined the channel, but it does not guarantee that every database change will produce a payload. I would first test with the simplest possible subscription:
 
 ```ts
 const channel = supabase
-  .channel('projects-changes')
+  .channel('projects-debug')
   .on(
     'postgres_changes',
     {
@@ -253,11 +253,17 @@ const channel = supabase
   })
 ```
 
-After the status logs `SUBSCRIBED`, insert a new row into `projects`.
+After the status logs `SUBSCRIBED`, insert a new row into the same table and check whether the callback runs.
 
-If you still do not receive a payload, I would next check whether the table is enabled for Realtime/Postgres changes and whether Row Level Security is preventing the authenticated user from reading the row.
+If no payload is received, I would check:
 
-A useful test is to run a normal `select()` from the same client session:
+- whether the table is enabled for Postgres changes / Realtime
+- whether the subscription uses the correct schema and table name
+- whether the event filter matches the change being made
+- whether the insert/update happens after the subscription is active
+- whether RLS is enabled and the authenticated user can read the changed row
+
+A useful follow-up test is to run a normal `select()` from the same client session:
 
 ```ts
 const { data, error } = await supabase
@@ -265,7 +271,7 @@ const { data, error } = await supabase
   .select('*')
 ```
 
-If that returns an empty array because of RLS, then the issue may be authorization rather than the Realtime client code.
+If this returns no rows because of RLS, I would investigate authorization before assuming the Realtime client code is the problem.
 
 ## Escalation note
 
@@ -302,17 +308,100 @@ This would help users debug the difference between connection success and event 
 
 ## Reproduction notes
 
-TODO after testing:
+I tested a working Realtime baseline in a hosted Supabase project with a small `realtime_projects` table.
 
-- Supabase project setup:
-- Table schema:
-- Realtime enabled:
-- RLS enabled or disabled:
-- Policies before:
-- Subscription code:
-- Subscription status:
-- Insert/update SQL:
-- Result before fix:
-- Fix applied:
-- Result after fix:
-- What I learned:
+### Setup
+
+Table schema:
+
+```sql
+create table public.realtime_projects (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  created_at timestamptz default now()
+);
+```
+
+For this baseline test, I kept RLS out of scope so I could first confirm the Realtime path without adding authorization complexity.
+
+### Client test
+
+I used a small Node.js script with `@supabase/supabase-js`, the project URL, and the anon public key.
+
+The script subscribes to `INSERT` events on `public.realtime_projects`:
+
+```js
+const channel = supabase
+  .channel('realtime-projects-test')
+  .on(
+    'postgres_changes',
+    {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'realtime_projects',
+    },
+    (payload) => {
+      console.log('INSERT received:', payload)
+    }
+  )
+  .subscribe((status) => {
+    console.log('Subscription status:', status)
+  })
+```
+
+After the subscription reached `SUBSCRIBED`, the script inserted a test row:
+
+```js
+const { data, error } = await supabase
+  .from('realtime_projects')
+  .insert({ name: 'Realtime test project' })
+  .select()
+```
+
+### Observed result
+
+The subscription reached `SUBSCRIBED`, the insert succeeded, and the Realtime payload was received:
+
+```text
+Subscription status: SUBSCRIBED
+Inserting test row...
+Insert result: {
+  data: [
+    {
+      id: '<project-id>',
+      name: 'Realtime test project',
+      created_at: '<timestamp>'
+    }
+  ],
+  error: null
+}
+INSERT received: {
+  schema: 'public',
+  table: 'realtime_projects',
+  commit_timestamp: '<timestamp>',
+  eventType: 'INSERT',
+  new: {
+    id: '<project-id>',
+    name: 'Realtime test project',
+    created_at: '<timestamp>'
+  },
+  old: {},
+  errors: null
+}
+Subscription status: CLOSED
+Test finished.
+```
+
+### What I learned
+
+This baseline helps separate a connection problem from an event delivery problem.
+
+If a user reaches `SUBSCRIBED` but does not receive payloads, I would not assume the whole Realtime client is broken. I would check whether:
+
+- the database change happens after the subscription is active
+- the subscription listens to the correct `schema`, `table`, and `event`
+- the table is configured for Postgres changes / Realtime
+- RLS policies allow the user to read the changed row, if RLS is enabled
+- the client connection stays alive long enough to receive the event
+
+The important detail is that `SUBSCRIBED` only confirms the client joined the channel. It does not prove that a matching database change will be delivered to that client.
