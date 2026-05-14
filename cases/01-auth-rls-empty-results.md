@@ -1,6 +1,6 @@
 # Case 1: Authenticated user sees no rows because of RLS
 
-> Status: Draft. I wrote this based on a common Supabase support scenario and will update it after reproducing the issue in a local Supabase project.
+> Status: Reproduced in a hosted Supabase project using a test user, RLS-enabled table, and a small Node.js client script.
 
 ## Why I picked this case
 
@@ -196,14 +196,86 @@ This would help users understand that the query may be working correctly, but re
 
 ## Reproduction notes
 
-TODO after testing:
+I reproduced this in a hosted Supabase project with a small `test` table.
 
-- Supabase project setup:
-- Auth user created:
-- Table schema:
-- RLS state:
-- Policy before:
-- Query result before fix:
+### Setup
+
+Table schema:
+
+```sql
+create table public.projects (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  name text not null,
+  created_at timestamptz default now()
+);
+
+alter table public.projects enable row level security;
+```
+
+I created one test user through Supabase Auth and inserted one project row owned by that user:
+
+```sql
+insert into public.projects (user_id, name)
+values
+  ('<test-user-id>', 'Demo project owned by test user');
+```
+
+### Client test
+
+I used a small Node.js script with `@supabase/supabase-js`, the project URL, and the anon public key.
+
+The script signs in as the test user and runs:
+
+```js
+const { data, error } = await supabase
+  .from('projects')
+  .select('*')
+```
+
+### Before adding a SELECT policy
+
+With RLS enabled and no matching `select` policy, the signed-in user could authenticate successfully, but the query returned no rows:
+
+```text
+Signed in user: <test-user-id>
+Query result: { data: [], error: null }
+```
+
+### Policy added
+
+```sql
+create policy "Users can read their own projects"
+on public.projects
+for select
+to authenticated
+using (user_id = auth.uid());
+```
+
+### After adding the SELECT policy
+
+Running the same script again returned the project row owned by the authenticated user:
+
+```text
+Signed in user: <test-user-id>
+Query result: {
+  data: [
+    {
+      id: '<project-id>',
+      user_id: '<test-user-id>',
+      name: 'Demo project owned by test user',
+      created_at: '<timestamp>'
+    }
+  ],
+  error: null
+}
+```
+
+### What I learned
+
+The important part is that the first query did not fail. The request succeeded with `error = null`, but RLS filtered out every row because no policy allowed the authenticated user to read them.
+
+Authentication confirmed who the user was. The RLS policy decided which rows that user could access.
 - Policy after:
 - Query result after fix:
 - What I learned:
