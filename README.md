@@ -1,8 +1,8 @@
 # Supabase Support Engineer Casebook
 
-I built this casebook while learning Supabase more deeply. I wanted to test myself against the kind of work the role requires, instead of just reading docs and sending over a CV.
+I built this casebook while getting more hands-on with Supabase. I wanted to test myself against the kind of work the role requires, instead of just reading docs and sending over a CV.
 
-My background is in technical support, customer communication, internal tools, and API integrations. This repo is my way of connecting that experience with Supabase, PostgreSQL, Auth, RLS, and Realtime.
+My background is in technical support, customer communication, internal tools, and API integrations. This repo is my way of connecting this experience with Supabase, PostgreSQL, Auth, RLS, and Realtime.
 
 ## Cases
 
