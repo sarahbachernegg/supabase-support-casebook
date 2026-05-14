@@ -306,6 +306,4 @@ This test was a good reminder not to describe indexes as magic fixes. The index 
 The support takeaway is that if an RLS policy depends on a column like `user_id`, that column is a strong candidate for indexing, especially as the table grows or when queries add sorting, limits, joins, or additional filters.
 
 I would still validate the change with `EXPLAIN ANALYZE` instead of assuming the index improves every query.
-- Result before fix:
-- Result after fix:
-- What I learned:
+
