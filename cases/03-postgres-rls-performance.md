@@ -1,7 +1,7 @@
 # Case 3: Slow queries caused by RLS policy checks on non-indexed columns
 
-> Status: Draft. I wrote this based on a common Supabase/Postgres performance scenario and will update it after reproducing the issue with real query plans.
-
+> Status: Reproduced in a hosted Supabase project with a 100,000-row table. I compared `EXPLAIN ANALYZE` output before and after adding an index on the column used for row ownership.
+> 
 ## Why I picked this case
 
 I picked this case because it is more database-focused than the first two.
@@ -155,39 +155,33 @@ on public.projects (user_id, created_at desc);
 
 I would not add indexes blindly. I would test with `EXPLAIN ANALYZE` and compare before/after results.
 
-## Customer-facing response draft
+## Reply I would send
 
-Thanks for the details. Since the query became slow as the table grew, I would check the RLS policy and indexes together.
+Thanks for sharing the query and policy. Since the table has grown and the policy checks `user_id = auth.uid()`, I would look at the RLS policy and indexes together.
 
-Your policy uses `user_id = auth.uid()`, which means Postgres needs to evaluate `user_id` when deciding which rows the authenticated user can read.
+The policy may be correct from an access-control point of view, but Postgres still needs to evaluate the column used in that policy. If `user_id` is not indexed, the database may need to scan many more rows as the table grows.
 
-If `projects.user_id` is not indexed, performance can become worse as the table grows. A good first test would be to compare the query plan before and after adding an index:
+I would first check the query plan:
 
 ```sql
 explain analyze
 select *
 from public.projects
-where user_id = auth.uid();
+where user_id = '<user-id>'::uuid;
 ```
 
-Then test this index:
+If the plan shows a sequential scan and many rows removed by the filter, I would test an index on the ownership column:
 
 ```sql
 create index projects_user_id_idx
 on public.projects (user_id);
 ```
 
-After adding the index, run `EXPLAIN ANALYZE` again and compare the execution time and plan.
+Then run `EXPLAIN ANALYZE` again and compare the plan.
 
-If your UI usually sorts recent projects first, we may also want to test a composite index like:
+In my own test with 100,000 rows, the query changed from a sequential scan that filtered out 99,000 rows to a bitmap index scan using the `user_id` index. The runtime was similar in that small dataset, so I would not claim the index is automatically faster in every case. But it did give Postgres a better access path and is the first thing I would check for an RLS policy based on row ownership.
 
-```sql
-create index projects_user_id_created_at_idx
-on public.projects (user_id, created_at desc);
-```
-
-I would start with the simple `user_id` index, measure the result, and only add more indexes if the query pattern requires it.
-
+If the query is still slow after indexing `user_id`, I would next look at the full query pattern: ordering, limits, joins, additional filters, row count, and whether a composite index would fit the actual access pattern.
 ## Escalation note
 
 I would not escalate this immediately because it is likely a schema/indexing issue.
@@ -222,17 +216,96 @@ This would help users understand that RLS correctness and RLS performance are re
 
 ## Reproduction notes
 
-TODO after testing:
+I reproduced this in a hosted Supabase project with a `performance_projects` table containing 100,000 rows.
 
-- Supabase project setup:
-- Table schema:
-- Number of rows:
-- RLS policy:
-- Indexes before:
-- Query tested:
-- `EXPLAIN ANALYZE` before:
-- Index added:
-- `EXPLAIN ANALYZE` after:
+### Setup
+
+```sql
+create table public.performance_projects (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  name text not null,
+  created_at timestamptz default now()
+);
+
+alter table public.performance_projects enable row level security;
+
+create policy "Users can read their own performance projects"
+on public.performance_projects
+for select
+to authenticated
+using (user_id = auth.uid());
+```
+
+I inserted 100,000 test rows. Around 1,000 rows belonged to the test user, and the rest belonged to random users:
+
+```sql
+insert into public.performance_projects (user_id, name)
+select
+  case
+    when i % 100 = 0 then '<test-user-id>'::uuid
+    else gen_random_uuid()
+  end as user_id,
+  'Project ' || i as name
+from generate_series(1, 100000) as i;
+```
+
+For the query plan test, I used a direct UUID instead of `auth.uid()` because `auth.uid()` depends on the request context and can be `null` in the SQL editor.
+
+### Query tested
+
+```sql
+explain analyze
+select *
+from public.performance_projects
+where user_id = '<test-user-id>'::uuid;
+```
+
+### Before adding an index
+
+Before adding an index on `user_id`, Postgres used a sequential scan:
+
+```text
+Seq Scan on performance_projects
+Filter: (user_id = '<test-user-id>'::uuid)
+Rows Removed by Filter: 99000
+Returned rows: 1000
+Execution time: 11.26ms
+```
+
+This means Postgres scanned the full 100,000-row table and filtered out 99,000 rows.
+
+### Index added
+
+```sql
+create index performance_projects_user_id_idx
+on public.performance_projects (user_id);
+```
+
+### After adding the index
+
+After adding the index, Postgres used the `performance_projects_user_id_idx` index:
+
+```text
+Bitmap Heap Scan on performance_projects
+Recheck Cond: (user_id = '<test-user-id>'::uuid)
+Heap Blocks: exact=1000
+Returned rows: 1000
+Execution time: 11.51ms
+
+Bitmap Index Scan on performance_projects_user_id_idx
+Index Cond: (user_id = '<test-user-id>'::uuid)
+```
+
+In this small test, execution time was similar. The important difference was the query plan: before the index, Postgres scanned the full table; after the index, it used the ownership column index.
+
+### What I learned
+
+This test was a good reminder not to describe indexes as magic fixes. The index changed the query plan, but the measured runtime in this small dataset stayed similar.
+
+The support takeaway is that if an RLS policy depends on a column like `user_id`, that column is a strong candidate for indexing, especially as the table grows or when queries add sorting, limits, joins, or additional filters.
+
+I would still validate the change with `EXPLAIN ANALYZE` instead of assuming the index improves every query.
 - Result before fix:
 - Result after fix:
 - What I learned:
