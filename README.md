@@ -44,7 +44,7 @@ A subscription reached `SUBSCRIBED`, and the insert succeeded, but no payload wa
 
 I tested a 100,000-row table with an RLS-style ownership column.
 
-Before adding an index, Postgres used a sequential scan and filtered out 99,000 rows. After adding an index on `user_id`, Postgres used the index. The runtime was similar in this small test, which was a useful reminder to measure instead of assuming.
+Before adding an index, Postgres used a sequential scan and filtered out 99,000 rows. After adding an index on `user_id`, Postgres used the index. The runtime was similar in this small test, which means actual measuring is better than assuming.
 
 [Read case](cases/03-postgres-rls-performance.md)
 
