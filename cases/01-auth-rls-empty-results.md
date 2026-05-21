@@ -2,11 +2,11 @@
 
 > Status: Reproduced in a hosted Supabase project using a test user, an RLS-enabled table, and a small Node.js client script.
 
-## Why I picked this case
+## Why I chose this case
 
-I picked this because it seems like a common Supabase support issue: a user is logged in, the table has data, but the client query returns an empty array.
+I chose this case because it is the kind of issue that can look like a client-side bug at first. The user is signed in. The query does not throw an error. The table has rows. But the app still receives an empty array. When I reproduced it, the important part was not the query itself. The request was working. The missing piece was authorization, so, the user was authenticated, but no RLS policy allowed that user to read the row.
 
-First, this looked like an auth or client-side bug to me. But I found that in Supabase, authentication and authorization are separate. A user can be logged in successfully and still not be allowed to see any rows because of Row Level Security.
+That made this a useful support case because the first instinct can easily be to debug the wrong layer.
 
 ## Customer problem
 
@@ -29,26 +29,36 @@ The user can see rows in the Supabase dashboard, so they expect the app to retur
 
 ## Impact
 
-The user's dashboard appears empty.
+The users dashboard appears empty. From the users point of view, the app looks broken even though authentication is working. The confusing part is that the response shape looks successful - there is no error, just no visible data.
 
-From the user's perspective, the app looks broken even though authentication works. This can be confusing because there is no obvious error message.
+## Reproduction 
+Environment: hosted Supabase project
+Client: small Node.js script using @supabase/supabase-js
+Table tested: public.projects
+Failure reproduced: signed-in user received data = [], error = null
+Fix tested: added a select policy for the authenticated role
+Result after fix: the same query returned the project row owned by the test user
 
 ## What I checked first
 
+I wanted to separate authentication from authorization before changing anything.
+
+The checks I would make are:
+
 1. Is Row Level Security enabled on the table?
 2. Is there a `select` policy for the `authenticated` role?
-3. Does the table have a `user_id` or `owner_id` column?
-4. Does that column store the same UUID as `auth.uid()`?
-5. Is the client using the authenticated user's session?
-6. Does the same query work with the service role key?
+3. Does the table store ownership in a column such as user_id or owner_id?
+4. Does that value match the logged-in users ID?
+5. Is the client actually using the authenticated users session?
+6. Does the same query return rows when tested with the service role key?
+
+The service role check is not a fix for the client app. I would only use it to confirm whether the data exists and whether RLS is the likely reason the user cannot see it.
 
 ## Reproduction notes
 
-I reproduced this in a hosted Supabase project with a small test table.
+I reproduced this with a small projects table.
 
 ### Setup
-
-Table schema:
 
 ```sql
 create table public.projects (
@@ -73,7 +83,7 @@ values
 
 I used a small Node.js script with `@supabase/supabase-js`, the project URL, and the anon public key.
 
-The script signs in as the test user and runs:
+The script signs in as the test user and then runs:
 
 ```ts
 const { data, error } = await supabase
@@ -89,6 +99,8 @@ With RLS enabled and no matching `select` policy, the signed-in user could authe
 Signed in user: <test-user-id>
 Query result: { data: [], error: null }
 ```
+
+This was the key part of the reproduction. The query did not fail. It returned exactly what the current RLS setup allowed the user to see: nothing.
 
 ### Policy added
 
@@ -121,28 +133,26 @@ Query result: {
 
 ## Investigation notes
 
-My first step was to separate authentication from authorization.
+The main thing I would explain to the user is that signing in and being allowed to read rows are separate steps.
 
 Authentication answers:
 
-> Is the user logged in?
+> Who is the user?
 
 Authorization answers:
 
-> Is this user allowed to read these rows?
+> Which rows is this user allowed to access?
 
-In this case, the user was authenticated correctly, but Postgres RLS still filtered out every row until a matching policy was added.
-
-The key detail is that an empty array is not always a failed query. It can also mean the query succeeded, but RLS allowed zero rows to be returned.
+In this case, authentication was working. The user had a valid session. But once the query reached Postgres, RLS still decided whether any rows were visible to that user. That is why `data = []` and `error = null` is an important clue. It can mean the request succeeded, but the current policies allowed zero rows to be returned.
 
 ## Likely root cause
 
 The most likely root cause is one of these:
 
 1. RLS is enabled but no `select` policy exists.
-2. A policy exists, but it does not match the authenticated user's ID.
+2. A policy exists, but it does not match the authenticated users ID.
 3. The table stores ownership in a different column than the policy expects.
-4. The client is not sending the authenticated user's session/JWT.
+4. The client is not sending the authenticated users session/JWT.
 
 In my reproduction, the missing piece was the `select` policy.
 
@@ -168,18 +178,20 @@ to authenticated
 with check (user_id = auth.uid());
 ```
 
+For a real application, I would also check the actual data model before suggesting a policy. If projects can belong to teams or organizations, a simple user_id = auth.uid() policy may be too narrow.
+
 ## Support reply I would send to the user
 
-Thanks for sharing the details. Since the query returns `data = []` with `error = null`, I would first check the RLS setup on the `projects` table.
+Thanks for sharing the query and the result. Since the query returns `data = []` with `error = null`, I would first check the RLS setup on the `projects` table.
 
 This usually means the request itself is not failing. Instead, Postgres is returning zero rows that are visible to the current user. In Supabase, signing in successfully confirms who the user is, but RLS policies still decide which rows that user is allowed to read.
 
-Please check these four things first:
+I would check these four things first:
 
 1. Is RLS enabled on `projects`?
 2. Is there a `select` policy for the `authenticated` role?
 3. Does `projects.user_id` store the same UUID as the logged-in user's `auth.uid()`?
-4. Is the client request using the authenticated user's session?
+4. Is the client request using the authenticated users session?
 
 If each project belongs to one user, please test this policy:
 
@@ -199,15 +211,11 @@ const { data, error } = await supabase
   .select('*')
 ```
 
-If the row appears after adding the policy, the issue was not the `select()` call itself. The query was working, but RLS was filtering out the rows because no policy allowed this user to read them.
-
-If it still returns an empty array, I would next check whether the client has an active session and whether the stored `user_id` value exactly matches the authenticated user's ID.
-
-If this still does not return the expected row, please share the table schema, active RLS policies, and the client code used for the query so we can narrow it down further.
+If the row appears after adding the policy, the issue was not the select() call itself. The query was working, but RLS was filtering out the row because no policy allowed this user to read it. If it still returns an empty array, I would next check whether the client has an active session and whether the stored user_id value exactly matches the authenticated user's ID. If you want, please share the table schema, active RLS policies, and the client code used for the query, and I can help narrow down which part is not matching.
 
 ## Escalation note
 
-I would not escalate this immediately because this is most likely expected RLS behavior.
+I would not escalate this immediately because the behavior matches expected RLS behavior.
 
 I would escalate only if:
 
@@ -231,7 +239,7 @@ For escalation, I would include:
 
 This issue is confusing because `data = []` and `error = null` can look like the table is empty.
 
-A useful docs or dashboard improvement could be a troubleshooting note near RLS examples:
+A useful troubleshooting note near RLS examples could say: 
 
 > If a client query returns an empty array with no error, check whether RLS is enabled and whether any policy matches the current authenticated user.
 
@@ -239,6 +247,11 @@ This would help users understand that the query may be working correctly, but re
 
 ## What I learned
 
-The first query did not fail. The request succeeded with `error = null`, but RLS filtered out every row because no policy allowed the authenticated user to read them.
+The query did not fail. The request succeeded with error = null, but RLS filtered out every row because no policy allowed the authenticated user to read them. 
 
-Authentication confirmed who the user was. The RLS policy decided which rows that user could access.
+The useful debugging split was:
+
+- first confirm the user is authenticated
+- then confirm the user is authorized to read the expected rows
+
+That distinction is easy to miss when the app only shows an empty dashboard.
