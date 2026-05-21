@@ -1,8 +1,10 @@
 # Supabase Support Engineer Casebook
 
-I built this casebook while getting more hands-on with Supabase. I wanted to test myself against the kind of work the role requires, instead of just reading docs and sending over a CV.
+I built this casebook as proof-of-work for the Supabase Support Engineer role.
 
-My background is in technical support, customer communication, internal tools, and API integrations. This repo is my way of connecting that experience with Supabase, PostgreSQL, Auth, RLS, and Realtime.
+I did not want to only say that I am interested in Supabase. I wanted to reproduce the kinds of issues I would expect to see in support: a successful auth flow that still returns no rows because of RLS, a Realtime channel that reaches `SUBSCRIBED` but delivers no database events, and a simple RLS ownership policy that becomes a query-planning problem as data grows.
+
+My background is in technical support, customer communication, internal tools, and API integrations. This repo connects that experience with hands-on Supabase debugging: PostgreSQL, Auth, RLS, Realtime, indexes, customer-facing explanations, and escalation notes.
 
 ## Cases
 
