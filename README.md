@@ -6,6 +6,8 @@ I did not want to only say that I am interested in Supabase. I wanted to reprodu
 
 My background is in technical support, customer communication, internal tools, and API integrations. This repo connects that experience with hands-on Supabase debugging: PostgreSQL, Auth, RLS, Realtime, indexes, customer-facing explanations, and escalation notes.
 
+The goal was not to create perfect textbook examples, but to show how I approach unclear support issues: reproduce the problem, isolate the layer, explain the likely cause, suggest a safe fix, and know when to escalate.
+
 ## Cases
 
 ### 1. Auth + RLS: authenticated user sees no rows
