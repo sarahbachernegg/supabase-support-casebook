@@ -22,7 +22,12 @@ data = []
 error = null
 ```
 
-In my reproduction, the query was not failing. RLS was enabled, but no matching `select` policy allowed the authenticated user to read the row.
+The important detail is that this is not always a failed query. In my reproduction, the request succeeded, but RLS filtered out every row because no matching select policy allowed the authenticated user to read the data.
+
+This case helped me separate two things that are easy to mix up when debugging Supabase issues:
+
+authentication: is the user signed in?
+authorization: is this user allowed to see these rows?
 
 [Read case](cases/01-auth-rls-empty-results.md)
 
@@ -30,12 +35,21 @@ In my reproduction, the query was not failing. RLS was enabled, but no matching 
 
 ### 2. Realtime: subscription connects but receives no events
 
-**Area:** Supabase Realtime, Postgres Changes  
+**Area:** Supabase Realtime, Postgres Changes
 **Status:** Reproduced in a hosted Supabase project
 
-A subscription reached `SUBSCRIBED`, and the insert succeeded, but no payload was received until the table was enabled for Postgres Changes / Realtime.
+A subscription reached SUBSCRIBED, and the insert succeeded, but no payload was received until the table was enabled for Postgres Changes / Realtime.
 
-**Takeaway:** `SUBSCRIBED` means the client joined the channel. It does not always mean a matching database change will be delivered.
+The misleading part is that SUBSCRIBED can look like the whole Realtime setup is working. In this case, it only confirmed that the client joined the channel. It did not prove that a matching database change would be delivered.
+
+This case was useful because it forced me to debug across a few layers:
+
+- client subscription status
+- schema and table names
+- event filters
+- database changes happening after subscription
+- Realtime table configuration
+- RLS visibility
 
 [Read case](cases/02-realtime-no-events.md)
 
@@ -48,7 +62,9 @@ A subscription reached `SUBSCRIBED`, and the insert succeeded, but no payload wa
 
 I tested a 100,000-row table with an RLS-style ownership column.
 
-Before adding an index, Postgres used a sequential scan and filtered out 99,000 rows. After adding an index on `user_id`, Postgres used the index. The runtime was similar in this small test, which means actual measuring is better than assuming.
+Before adding an index, Postgres used a sequential scan and filtered out 99,000 rows. After adding an index on user_id, Postgres used the index. The runtime was similar in this small test, which was actually an important result: measuring is better than assuming.
+
+This case is about the difference between a policy being correct and a policy being efficient as data grows. If an RLS policy depends on a column like user_id, that column is worth looking at when debugging slow queries.
 
 [Read case](cases/03-postgres-rls-performance.md)
 
@@ -66,3 +82,14 @@ Each case includes:
 - escalation note
 - documentation or product improvement idea
 - what I learned while reproducing and debugging the issue
+
+## What I wanted to show
+
+This casebook is meant to show how I would approach support work at Supabase:
+
+- reproduce issues instead of guessing
+- separate client, auth, database, policy, and configuration problems
+- explain technical behavior in a way that is useful to the user
+- avoid overpromising when the evidence is not there yet
+- use logs, minimal examples, SQL, and query plans to narrow down the issue
+- know when a case can be solved through support and when it needs escalation
