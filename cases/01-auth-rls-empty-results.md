@@ -109,7 +109,7 @@ create policy "Users can read their own projects"
 on public.projects
 for select
 to authenticated
-using (user_id = auth.uid());
+using ((select auth.uid()) = user_id);
 ```
 
 ### After adding the SELECT policy
@@ -165,7 +165,7 @@ create policy "Users can read their own projects"
 on public.projects
 for select
 to authenticated
-using (user_id = auth.uid());
+using ((select auth.uid()) = user_id);
 ```
 
 If users also create projects from the client, an `insert` policy may be needed too:
@@ -200,7 +200,7 @@ create policy "Users can read their own projects"
 on public.projects
 for select
 to authenticated
-using (user_id = auth.uid());
+using ((select auth.uid()) = user_id);
 ```
 
 Then run the same client query again:
