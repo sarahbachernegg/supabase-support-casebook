@@ -33,13 +33,16 @@ The user can see rows in the Supabase dashboard, so they expect the app to retur
 
 The users dashboard appears empty. From the users point of view, the app looks broken even though authentication is working. The confusing part is that the response shape looks successful - there is no error, just no visible data.
 
-## Reproduction 
-Environment: hosted Supabase project
-Client: small Node.js script using @supabase/supabase-js
-Table tested: public.projects
-Failure reproduced: signed-in user received data = [], error = null
-Fix tested: added a select policy for the authenticated role
-Result after fix: the same query returned the project row owned by the test user
+## Reproduction
+
+| Item | Details |
+|---|---|
+| Environment | Hosted Supabase project |
+| Client | Small Node.js script using `@supabase/supabase-js` |
+| Table | `public.projects` |
+| Failure reproduced | Signed-in user received `data = []`, `error = null` |
+| Fix tested | Added a `SELECT` policy for the `authenticated` role |
+| Result after fix | The same query returned the project row owned by the test user |
 
 ## What I checked first
 
