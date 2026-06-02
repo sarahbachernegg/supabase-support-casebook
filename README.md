@@ -1,6 +1,6 @@
 # Technical Support Engineer Casebook
 
-I built this casebook for my application at Ashby. 
+I built this casebook for my application.
 
 I wanted to work through a few problems that felt close to real support cases using Supabase as environemnt: a signed-in user seeing no rows, a Realtime channel that connects but receives no events, and an RLS policy that is correct but worth checking from a query-planning perspective.
 
