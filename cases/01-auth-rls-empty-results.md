@@ -8,7 +8,7 @@ I chose this case because it can look like a client-side bug at first. The user 
 
 When I reproduced it, the important part was not the `select()` call. The request was working. The missing piece was authorization: the user was authenticated, but no RLS policy allowed that user to read the row.
 
-That made this a useful support case because the first instinct can easily be to debug the wrong layer.
+That made this a useful support case for me, because my first instinct would have been to check the client query before looking at the policy layer.
 
 ## Customer problem
 
@@ -31,7 +31,7 @@ The user can see rows in the Supabase dashboard, so they expect the app to retur
 
 ## Impact
 
-The users dashboard appears empty. From the users point of view, the app looks broken even though authentication is working. The confusing part is that the response shape looks successful - there is no error, just no visible data.
+The user's dashboard appears empty. From the users point of view, the app looks broken even though authentication is working. The confusing part is that the response shape looks successful - there is no error, just no visible data.
 
 ## Reproduction
 
@@ -48,7 +48,7 @@ The users dashboard appears empty. From the users point of view, the app looks b
 
 I wanted to separate authentication from authorization before changing anything.
 
-The checks I would make are:
+Before changing the policy, I would first check whether the request is reaching Postgres as the user I expect.
 
 1. Is Row Level Security enabled on the table?
 2. Is there a `select` policy for the `authenticated` role?
@@ -57,7 +57,7 @@ The checks I would make are:
 5. Is the client actually using the authenticated users session?
 6. Does the same query return rows when tested with the service role key?
 
-The service role check is not a fix for the client app. I would only use it to confirm whether the data exists and whether RLS is the likely reason the user cannot see it.
+The service-role check is not a fix for the client app. I would only run it from a trusted server-side environment to confirm that the row exists and that RLS is the likely reason the user cannot see it. I would never expose the service-role key in browser or mobile client code.
 
 ## Reproduction notes
 
@@ -152,7 +152,7 @@ In this case, authentication was working. The user had a valid session. But once
 
 ## Likely root cause
 
-The most likely root cause is one of these:
+For this symptom, I would first look for one of these causes:
 
 1. RLS is enabled but no `select` policy exists.
 2. A policy exists, but it does not match the authenticated users ID.
