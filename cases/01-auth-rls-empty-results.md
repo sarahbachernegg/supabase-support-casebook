@@ -1,10 +1,12 @@
 # Case 1: Authenticated user sees no rows because of RLS
 
-> Status: Reproduced in a hosted Supabase project using a test user, an RLS-enabled table, and a small Node.js client script.
+**Status:** Reproduced in a hosted Supabase project using a test user, an RLS-enabled table, and a small Node.js client script.
 
 ## Why I chose this case
 
-I chose this case because it is the kind of issue that can look like a client-side bug at first. The user is signed in. The query does not throw an error. The table has rows. But the app still receives an empty array. When I reproduced it, the important part was not the query itself. The request was working. The missing piece was authorization, so, the user was authenticated, but no RLS policy allowed that user to read the row.
+I chose this case because it can look like a client-side bug at first. The user is signed in, the query does not throw an error, and the table has rows. But the app still receives an empty array.
+
+When I reproduced it, the important part was not the `select()` call. The request was working. The missing piece was authorization: the user was authenticated, but no RLS policy allowed that user to read the row.
 
 That made this a useful support case because the first instinct can easily be to debug the wrong layer.
 
