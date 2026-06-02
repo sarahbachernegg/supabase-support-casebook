@@ -1,26 +1,26 @@
 # Supabase Support Engineer Casebook
 
-I built this casebook as proof-of-work for the Supabase Support Engineer role. I did not want to just say that I am interested in Supabase. I wanted to show it through reproducible support cases.
+I built this casebook for my Supabase Support Engineer application.
 
-My background is in technical support, customer communication, internal tools, and API integrations. This repo connects that experience with Supabase debugging: PostgreSQL, Auth, RLS, Realtime, indexes, customer-facing explanations, and escalation notes.
+Instead of only saying that I am interested in Supabase, I wanted to work through a few problems that felt close to real support cases: a signed-in user seeing no rows, a Realtime channel that connects but receives no events, and an RLS policy that is correct but worth checking from a query-planning perspective.
 
-The goal was not to create perfect textbook examples, but to show how I approach unclear support issues: reproduce the problem, isolate the layer, explain the likely cause, suggest a safe fix, and know when to escalate.
+I wanted to show how I would handle a support issue when the first symptom is ambiguous: reproduce it, check each layer, explain what the evidence points to, and be clear about what I would escalate.
 
 ## How to review this repo
 
 If you only have a few minutes, start with:
 
-1. [Case 1: Auth + RLS authenticated user sees no rows](cases/01-auth-rls-empty-results.md)
-2. [Case 2: Realtime subscription connects but receives no events](cases/02-realtime-no-events.md)
-3. [Case 3: Postgres/RLS performance, slow queries after enabling policies](cases/03-postgres-rls-performance.md)
+1. [Case 1: Auth + RLS — authenticated user sees no rows](./cases/01-auth-rls-empty-data.md)
+2. [Case 2: Realtime — subscription connects but receives no events](./cases/02-realtime-subscribed-no-events.md)
+3. [Case 3: Postgres/RLS performance — slow queries after enabling policies](./cases/03-rls-performance-indexing.md)
 
 Each case is written to show both technical debugging and customer communication. The most relevant sections are:
 
-- the reproduction notes
-- the likely root cause
-- the fix or workaround
-- the support reply I would send to the user
-- the escalation note
+- reproduction notes
+- likely root cause
+- fix or workaround
+- support reply I would send to the user
+- escalation note
 
 ## Cases
 
@@ -31,30 +31,30 @@ Each case is written to show both technical debugging and customer communication
 
 A user is logged in, but their query returns:
 
-```ts
+```js
 data = []
 error = null
 ```
 
-The important detail is that this is not always a failed query. In my reproduction, the request succeeded, but RLS filtered out every row because no matching select policy allowed the authenticated user to read the data.
+The important detail is that this is not always a failed query. In my reproduction, the request succeeded, but RLS filtered out every row because no matching `SELECT` policy allowed the authenticated user to read the data.
 
-This case helped me separate two things that are easy to mix up when debugging Supabase issues:
+This case helped me separate two layers that are easy to mix up in Supabase support:
 
-authentication: is the user signed in?
-authorization: is this user allowed to see these rows?
+- **Authentication:** is the user signed in?
+- **Authorization:** is this user allowed to read these rows?
 
-[Read case](cases/01-auth-rls-empty-results.md)
+The key detail in this reproduction was that the request did not fail. The client received `error = null`, but RLS still removed all rows from the result.
 
----
+[Read case →](./cases/01-auth-rls-empty-data.md)
 
 ### 2. Realtime: subscription connects but receives no events
 
-**Area:** Supabase Realtime, Postgres Changes
+**Area:** Supabase Realtime, Postgres Changes  
 **Status:** Reproduced in a hosted Supabase project
 
-A subscription reached SUBSCRIBED, and the insert succeeded, but no payload was received until the table was enabled for Postgres Changes / Realtime.
+A subscription reached `SUBSCRIBED`, and the insert succeeded, but no payload was received until the table was enabled for Postgres Changes / Realtime.
 
-The misleading part is that SUBSCRIBED can look like the whole Realtime setup is working. In this case, it only confirmed that the client joined the channel. It did not prove that a matching database change would be delivered.
+The misleading part is that `SUBSCRIBED` can look like the whole Realtime setup is working. In this case, it only confirmed that the client joined the channel. It did not prove that a matching database change would be delivered.
 
 This case was useful because it forced me to debug across a few layers:
 
@@ -65,9 +65,9 @@ This case was useful because it forced me to debug across a few layers:
 - Realtime table configuration
 - RLS visibility
 
-[Read case](cases/02-realtime-no-events.md)
+My first instinct was to treat `SUBSCRIBED` as proof that Realtime was working, but the reproduction showed that it only proved the channel connection.
 
----
+[Read case →](./cases/02-realtime-subscribed-no-events.md)
 
 ### 3. Postgres/RLS performance: slow queries after enabling policies
 
@@ -76,11 +76,13 @@ This case was useful because it forced me to debug across a few layers:
 
 I tested a 100,000-row table with an RLS-style ownership column.
 
-Before adding an index, Postgres used a sequential scan and filtered out 99,000 rows. After adding an index on user_id, Postgres used the index. The runtime was similar in this small test, which was actually an important result: measuring is better than assuming.
+Before adding an index, Postgres used a sequential scan and filtered out 99,000 rows. After adding an index on `user_id`, Postgres used the index. The runtime was similar in this small hosted test, which was actually an important result: measuring is better than assuming.
 
-This case is about the difference between a policy being correct and a policy being efficient as data grows. If an RLS policy depends on a column like user_id, that column is worth looking at when debugging slow queries.
+This case is about the difference between a policy being correct and a policy being efficient as data grows. If an RLS policy depends on a column like `user_id`, that column is worth looking at when debugging slow queries.
 
-[Read case](cases/03-postgres-rls-performance.md)
+I expected the index to make the query obviously faster, but the small hosted test was more useful than that: it changed the plan, while reminding me not to claim performance improvements without measuring them.
+
+[Read case →](./cases/03-rls-performance-indexing.md)
 
 ## Case format
 
@@ -89,7 +91,7 @@ Each case includes:
 - customer problem
 - impact
 - investigation steps
-- my reproduction notes
+- reproduction notes
 - likely root cause
 - fix or workaround
 - support reply I would send to the user
