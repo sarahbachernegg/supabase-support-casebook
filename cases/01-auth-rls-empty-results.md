@@ -166,7 +166,7 @@ In my reproduction, the missing piece was the `select` policy.
 For a table where each project belongs to one user, a common fix is to add a `SELECT` policy that allows authenticated users to read only their own rows:
 
 ```sql
-create policy "Users can read their own projects"
+create policy "Users can create their own projects"
 on public.projects
 for select
 to authenticated
@@ -176,7 +176,7 @@ using ((select auth.uid()) = user_id);
 If users also create projects from the client, an INSERT policy may be needed as well:
 
 ```sql
-create policy "Users can read their own projects"
+create policy "Users can create their own projects"
 on public.projects
 for insert
 to authenticated
@@ -201,7 +201,7 @@ I would check these four things first:
 If each project belongs to one user, please test this policy:
 
 ```sql
-create policy "Users can create their own projects"
+create policy "Users can read their own projects"
 on public.projects
 for select
 to authenticated
