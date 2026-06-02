@@ -1,10 +1,10 @@
 # Technical Support Engineer Casebook
 
-I built this casebook for my application.
+I built this casebook as a product-support proof-of-work project using Supabase as the technical environment.
 
-I wanted to work through a few problems that felt close to real support cases using Supabase as environemnt: a signed-in user seeing no rows, a Realtime channel that connects but receives no events, and an RLS policy that is correct but worth checking from a query-planning perspective.
+I wanted to work through a few problems that felt close to real support cases: a signed-in user seeing no rows because of Row Level Security, a Realtime channel that connects but receives no database events, and an ownership policy that is correct but still worth checking from a query-planning perspective.
 
-I wanted to show how I would handle a support issue when the first symptom is ambiguous: reproduce it, check each layer, explain what the evidence points to, and be clear about what I would escalate.
+The goal was to show how I approach ambiguous support issues: reproduce the problem, check each layer, explain what the evidence points to, suggest a safe next step, and be clear about what I would escalate.
 
 ## How to review this repo
 
