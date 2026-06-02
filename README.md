@@ -12,7 +12,7 @@ If you only have a few minutes, start with:
 
 1. [Case 1: Auth + RLS authenticated user sees no rows](cases/01-auth-rls-empty-results.md)
 2. [Case 2: Realtime subscription connects but receives no events](cases/02-realtime-no-events.md)
-3. [Case 3: Postgres/RLS performance — slow queries after enabling policies](./cases/03-rls-performance-indexing.md)
+3. [Case 3: Postgres/RLS performance, slow queries after enabling policies](cases/03-postgres-rls-performance.md)
 
 Each case is written to show both technical debugging and customer communication. The most relevant sections are:
 
@@ -82,7 +82,7 @@ This case is about the difference between a policy being correct and a policy be
 
 I expected the index to make the query obviously faster, but the small hosted test was more useful than that: it changed the plan, while reminding me not to claim performance improvements without measuring them.
 
-[Read case →](./cases/03-rls-performance-indexing.md)
+[Read case →](cases/03-postgres-rls-performance.md)
 
 ## Case format
 
