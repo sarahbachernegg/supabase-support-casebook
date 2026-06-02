@@ -6,7 +6,7 @@
 
 I picked this case because it is more database-focused than the first two.
 
-Case 1 was about authorization. Case 2 was about Realtime configuration. This one is about what can happen after the policy is technically correct, but the table grows and Postgres has to evaluate more rows than expected.
+This one is about what can happen after the policy is technically correct, but the table grows and Postgres has to evaluate more rows than expected.
 
 The interesting part of this reproduction was that the index did not create a dramatic speedup in my small hosted test. The query plan changed, but the runtime stayed similar. That made the case more useful for me, not less, because it reminded me not to describe indexes as magic fixes.
 
