@@ -204,12 +204,14 @@ on public.projects
 for select
 to authenticated
 using ((select auth.uid()) = user_id);
+```
 
 Then run the same client query again:
 
-const { data, error } = await supabase
+```const { data, error } = await supabase
   .from('projects')
   .select('*')
+```
 
 If the row appears after adding the policy, the issue was not the select() call itself. The query was working, but RLS was filtering out the row because no policy allowed this user to read it.
 
