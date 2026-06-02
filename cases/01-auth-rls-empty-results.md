@@ -171,10 +171,11 @@ on public.projects
 for select
 to authenticated
 using ((select auth.uid()) = user_id);
+```
 
 If users also create projects from the client, an INSERT policy may be needed as well:
 
-create policy "Users can create their own projects"
+```create policy "Users can create their own projects"
 on public.projects
 for insert
 to authenticated
