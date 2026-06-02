@@ -163,7 +163,7 @@ In my reproduction, the missing piece was the `select` policy.
 
 ## Fix
 
-A common fix is to create a `select` policy that allows each authenticated user to read their own rows:
+For a table where each project belongs to one user, a common fix is to add a `SELECT` policy that allows authenticated users to read only their own rows:
 
 ```sql
 create policy "Users can read their own projects"
@@ -171,19 +171,16 @@ on public.projects
 for select
 to authenticated
 using ((select auth.uid()) = user_id);
-```
 
-If users also create projects from the client, an `insert` policy may be needed too:
+If users also create projects from the client, an INSERT policy may be needed as well:
 
-```sql
 create policy "Users can create their own projects"
 on public.projects
 for insert
 to authenticated
-with check (user_id = auth.uid());
-```
+with check ((select auth.uid()) = user_id);
 
-For a real application, I would also check the actual data model before suggesting a policy. If projects can belong to teams or organizations, a simple user_id = auth.uid() policy may be too narrow.
+For a real application, I would first check the data model before suggesting this exact policy. If projects belong to teams or organizations, a simple user_id = auth.uid() ownership policy may be too narrow.
 
 ## Support reply I would send to the user
 
