@@ -184,16 +184,16 @@ For a real application, I would first check the data model before suggesting thi
 
 ## Support reply I would send to the user
 
-Thanks for sharing the query and the result. Since the query returns `data = []` with `error = null`, I would first check the RLS setup on the `projects` table.
+Thanks for sharing the query and result. Since the query returns `data = []` with `error = null`, I would first check the RLS setup on the `projects` table.
 
-This usually means the request itself is not failing. Instead, Postgres is returning zero rows that are visible to the current user. In Supabase, signing in successfully confirms who the user is, but RLS policies still decide which rows that user is allowed to read.
+This usually means the request itself is not failing. Instead, Postgres is returning zero rows that are visible to the current user. In Supabase, signing in confirms who the user is, but RLS policies still decide which rows that user can read.
 
 I would check these four things first:
 
 1. Is RLS enabled on `projects`?
-2. Is there a `select` policy for the `authenticated` role?
+2. Is there a `SELECT` policy for the `authenticated` role?
 3. Does `projects.user_id` store the same UUID as the logged-in user's `auth.uid()`?
-4. Is the client request using the authenticated users session?
+4. Is the client request sending the authenticated user's JWT?
 
 If each project belongs to one user, please test this policy:
 
@@ -203,17 +203,6 @@ on public.projects
 for select
 to authenticated
 using ((select auth.uid()) = user_id);
-```
-
-Then run the same client query again:
-
-```ts
-const { data, error } = await supabase
-  .from('projects')
-  .select('*')
-```
-
-If the row appears after adding the policy, the issue was not the select() call itself. The query was working, but RLS was filtering out the row because no policy allowed this user to read it. If it still returns an empty array, I would next check whether the client has an active session and whether the stored user_id value exactly matches the authenticated user's ID. If you want, please share the table schema, active RLS policies, and the client code used for the query, and I can help narrow down which part is not matching.
 
 ## Escalation note
 
