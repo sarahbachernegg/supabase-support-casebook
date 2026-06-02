@@ -237,13 +237,11 @@ For escalation, I would include:
 
 ## Documentation or product improvement idea
 
-This issue is confusing because `data = []` and `error = null` can look like the table is empty.
+Supabase already documents that `data = []` with existing table rows can be caused by RLS policies not matching the current user. I think this could be surfaced even closer to the RLS policy examples or in the Dashboard policy editor, because this symptom can look like a client-side bug when users first encounter it.
 
-A useful troubleshooting note near RLS examples could say: 
+A short note could say:
 
-> If a client query returns an empty array with no error, check whether RLS is enabled and whether any policy matches the current authenticated user.
-
-This would help users understand that the query may be working correctly, but returning zero visible rows because of authorization rules.
+If a client query returns an empty array with no error, check whether RLS is enabled and whether any policy matches the current authenticated user. Also confirm that the request includes a valid user JWT and that `auth.uid()` matches the ownership column used in the policy.
 
 ## What I learned
 
