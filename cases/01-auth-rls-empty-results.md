@@ -212,7 +212,7 @@ const { data, error } = await supabase
 
 If the row appears after adding the policy, the issue was not the select() call itself. The query was working, but RLS was filtering out the row because no policy allowed this user to read it.
 
-If it still returns an empty array, the next checks would be the active user session, the JWT sent with the request, and whether the stored user_id value exactly matches the authenticated user's ID.
+If it still returns an empty array, please share a sanitized table schema, the active RLS policies, and the client code used for the query. Please remove API keys, JWTs, service-role keys, email addresses, and real user or project IDs before sharing.
 
 ## Escalation note
 
@@ -228,12 +228,15 @@ I would escalate only if:
 
 For escalation, I would include:
 
-- table schema
+- sanitized table schema
 - active RLS policies
-- example client query
+- example client query with secrets removed
 - expected result
 - actual result
-- whether the same query works with the service role key
+- authenticated user ID used for testing, replaced with a placeholder
+- whether `auth.uid()` matches the row's ownership column
+- whether the same query works from a trusted server-side environment with the service-role key
+- relevant logs, timestamps, and request IDs if available
 - a minimal reproduction if possible
 
 ## Documentation or product improvement idea
