@@ -38,7 +38,7 @@ error = null
 
 The important detail is that this is not always a failed query. In my reproduction, the request succeeded, but RLS filtered out every row because no matching `SELECT` policy allowed the authenticated user to read the data.
 
-This case helped me separate two layers that are easy to mix up in Supabase support:
+This case helped me separate two layers that are easy to mix up in technical product support:
 
 - **Authentication:** is the user signed in?
 - **Authorization:** is this user allowed to read these rows?
