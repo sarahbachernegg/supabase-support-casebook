@@ -1,12 +1,14 @@
 # Supabase Support Engineer Casebook
 
-I built this casebook as proof-of-work for the Supabase Support Engineer role.
+My proof-of-work portfolio for the role as Supabase Support Engineer.
 
-I did not want to only say that I am interested in Supabase. I wanted to reproduce the kinds of issues I would expect to see in support: a successful auth flow that still returns no rows because of RLS, a Realtime channel that reaches `SUBSCRIBED` but delivers no database events, and a simple RLS ownership policy that becomes a query-planning problem as data grows.
+I reproduced three realistic Supabase support cases in a hosted project:
 
-My background is in technical support, customer communication, internal tools, and API integrations. This repo connects that experience with hands-on Supabase debugging: PostgreSQL, Auth, RLS, Realtime, indexes, customer-facing explanations, and escalation notes.
+1. Auth + RLS: signed-in user receives `data = []` because row access is blocked by policy.
+2. Realtime: channel reaches `SUBSCRIBED`, but no Postgres Changes payload arrives until the table is enabled for Realtime.
+3. Postgres/RLS performance: an ownership policy is correct, but query plans change once the policy column is indexed.
 
-The goal was not to create perfect textbook examples, but to show how I approach unclear support issues: reproduce the problem, isolate the layer, explain the likely cause, suggest a safe fix, and know when to escalate.
+Each case includes reproduction steps, investigation notes, likely root cause, safe fix, customer-facing reply, and escalation notes.
 
 ## Cases
 
