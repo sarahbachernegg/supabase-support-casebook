@@ -166,7 +166,7 @@ In my reproduction, the missing piece was the `select` policy.
 For a table where each project belongs to one user, a common fix is to add a `SELECT` policy that allows authenticated users to read only their own rows:
 
 ```sql
-create policy "Users can create their own projects"
+create policy "Users can read their own projects"
 on public.projects
 for select
 to authenticated
