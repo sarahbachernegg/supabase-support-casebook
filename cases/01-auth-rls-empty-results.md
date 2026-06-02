@@ -178,7 +178,8 @@ create policy "Users can create their own projects"
 on public.projects
 for insert
 to authenticated
-with check ((select auth.uid()) = user_id);```
+with check ((select auth.uid()) = user_id);
+```
 
 For a real application, I would first check the data model before suggesting this exact policy. If projects belong to teams or organizations, a simple user_id = auth.uid() ownership policy may be too narrow.
 
