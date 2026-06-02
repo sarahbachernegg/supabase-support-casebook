@@ -1,14 +1,26 @@
 # Supabase Support Engineer Casebook
 
-My proof-of-work portfolio for the role as Supabase Support Engineer.
+I built this casebook as proof-of-work for the Supabase Support Engineer role. I did not want to just say that I am interested in Supabase. I wanted to show it through reproducible support cases.
 
-I reproduced three realistic Supabase support cases in a hosted project:
+My background is in technical support, customer communication, internal tools, and API integrations. This repo connects that experience with Supabase debugging: PostgreSQL, Auth, RLS, Realtime, indexes, customer-facing explanations, and escalation notes.
 
-1. Auth + RLS: signed-in user receives `data = []` because row access is blocked by policy.
-2. Realtime: channel reaches `SUBSCRIBED`, but no Postgres Changes payload arrives until the table is enabled for Realtime.
-3. Postgres/RLS performance: an ownership policy is correct, but query plans change once the policy column is indexed.
+The goal was not to create perfect textbook examples, but to show how I approach unclear support issues: reproduce the problem, isolate the layer, explain the likely cause, suggest a safe fix, and know when to escalate.
 
-Each case includes reproduction steps, investigation notes, likely root cause, safe fix, customer-facing reply, and escalation notes.
+## How to review this repo
+
+If you only have a few minutes, start with:
+
+1. [Case 1: Auth + RLS — authenticated user sees no rows](./cases/01-auth-rls-empty-data.md)
+2. [Case 2: Realtime — subscription connects but receives no events](./cases/02-realtime-subscribed-no-events.md)
+3. [Case 3: Postgres/RLS performance — slow queries after enabling policies](./cases/03-rls-performance-indexing.md)
+
+Each case is written to show both technical debugging and customer communication. The most relevant sections are:
+
+- the reproduction notes
+- the likely root cause
+- the fix or workaround
+- the support reply I would send to the user
+- the escalation note
 
 ## Cases
 
