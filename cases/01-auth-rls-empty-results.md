@@ -204,6 +204,16 @@ for select
 to authenticated
 using ((select auth.uid()) = user_id);
 
+Then run the same client query again:
+
+const { data, error } = await supabase
+  .from('projects')
+  .select('*')
+
+If the row appears after adding the policy, the issue was not the select() call itself. The query was working, but RLS was filtering out the row because no policy allowed this user to read it.
+
+If it still returns an empty array, the next checks would be the active user session, the JWT sent with the request, and whether the stored user_id value exactly matches the authenticated user's ID.
+
 ## Escalation note
 
 I would not escalate this immediately because the behavior matches expected RLS behavior.
