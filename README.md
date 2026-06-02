@@ -10,7 +10,7 @@ I wanted to show how I would handle a support issue when the first symptom is am
 
 If you only have a few minutes, start with:
 
-1. [Case 1: Auth + RLS — authenticated user sees no rows](./cases/01-auth-rls-empty-data.md)
+1. [Case 1: Auth + RLS authenticated user sees no rows](cases/01-auth-rls-empty-results.md)
 2. [Case 2: Realtime — subscription connects but receives no events](./cases/02-realtime-subscribed-no-events.md)
 3. [Case 3: Postgres/RLS performance — slow queries after enabling policies](./cases/03-rls-performance-indexing.md)
 
@@ -45,7 +45,7 @@ This case helped me separate two layers that are easy to mix up in Supabase supp
 
 The key detail in this reproduction was that the request did not fail. The client received `error = null`, but RLS still removed all rows from the result.
 
-[Read case →](./cases/01-auth-rls-empty-data.md)
+[Read case →](cases/01-auth-rls-empty-results.md)
 
 ### 2. Realtime: subscription connects but receives no events
 
