@@ -210,7 +210,8 @@ using ((select auth.uid()) = user_id);
 
 Then run the same client query again:
 
-```const { data, error } = await supabase
+```
+const { data, error } = await supabase
   .from('projects')
   .select('*')
 ```
