@@ -10,9 +10,9 @@ The goal was not to create perfect textbook examples, but to show how I approach
 
 If you only have a few minutes, start with:
 
-1. [Case 1: Auth + RLS — authenticated user sees no rows](cases/01-auth-rls-empty-results.md)
-2. [Case 2: Realtime — subscription connects but receives no events](cases/02-realtime-no-events.md)
-3. [Case 3: Postgres/RLS performance — slow queries after enabling policies](./cases/03-rls-performance-indexing.md)
+1. [Case 1: Auth + RLS authenticated user sees no rows](cases/01-auth-rls-empty-results.md)
+2. [Case 2: Realtime subscription connects but receives no events](cases/02-realtime-no-events.md)
+3. [Case 3: Postgres/RLS performance, slow queries after enabling policies](./cases/03-rls-performance-indexing.md)
 
 Each case is written to show both technical debugging and customer communication. The most relevant sections are:
 
