@@ -1,8 +1,8 @@
-# Supabase Support Engineer Casebook
+# Technical Support Engineer Casebook
 
-I built this casebook for my Supabase Support Engineer application.
+I built this casebook for my application at Ashby. 
 
-Instead of only saying that I am interested in Supabase, I wanted to work through a few problems that felt close to real support cases: a signed-in user seeing no rows, a Realtime channel that connects but receives no events, and an RLS policy that is correct but worth checking from a query-planning perspective.
+I wanted to work through a few problems that felt close to real support cases using Supabase as environemnt: a signed-in user seeing no rows, a Realtime channel that connects but receives no events, and an RLS policy that is correct but worth checking from a query-planning perspective.
 
 I wanted to show how I would handle a support issue when the first symptom is ambiguous: reproduce it, check each layer, explain what the evidence points to, and be clear about what I would escalate.
 
