@@ -201,7 +201,7 @@ I would check these four things first:
 If each project belongs to one user, please test this policy:
 
 ```sql
-create policy "Users can read their own projects"
+create policy "Users can create their own projects"
 on public.projects
 for select
 to authenticated
