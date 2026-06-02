@@ -101,7 +101,7 @@ Each case includes:
 
 ## What I wanted to show
 
-This casebook is meant to show how I would approach support work at Supabase:
+This casebook is meant to show how I would approach technical product support:
 
 - reproduce issues instead of guessing
 - separate client, auth, database, policy, and configuration problems
